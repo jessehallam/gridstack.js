@@ -37,8 +37,7 @@ module.exports = function(grunt) {
         copy: {
             dist: {
                 files: {
-                    'dist/gridstack.js': ['src/gridstack.js'],
-                    'dist/gridstack.jQueryUI.js': ['src/gridstack.jQueryUI.js'],
+                    'dist/gridstack.js': ['src/gridstack.js']
                 }
             }
         },
@@ -51,9 +50,7 @@ module.exports = function(grunt) {
             },
             dist: {
                 files: {
-                    'dist/gridstack.min.js': ['src/gridstack.js'],
-                    'dist/gridstack.jQueryUI.min.js': ['src/gridstack.jQueryUI.js'],
-                    'dist/gridstack.all.js': ['src/gridstack.js', 'src/gridstack.jQueryUI.js']
+                    'dist/gridstack.min.js': ['src/gridstack.js']
                 }
             }
         },

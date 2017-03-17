@@ -1,13 +1,18 @@
 /**
- * gridstack.js 0.3.0-dev
+ * gridstack.js 0.2.6
  * http://troolee.github.io/gridstack.js/
- * (c) 2014-2016 Pavel Reznikov, Dylan Weiss
+ * (c) 2014-2016 Pavel Reznikov
  * gridstack.js may be freely distributed under the MIT license.
  * @preserve
 */
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'lodash'], factory);
+        define(['jquery', 'lodash', 'jquery-ui/data', 'jquery-ui/disable-selection', 'jquery-ui/focusable',
+            'jquery-ui/form', 'jquery-ui/ie', 'jquery-ui/keycode', 'jquery-ui/labels', 'jquery-ui/jquery-1-7',
+            'jquery-ui/plugin', 'jquery-ui/safe-active-element', 'jquery-ui/safe-blur', 'jquery-ui/scroll-parent',
+            'jquery-ui/tabbable', 'jquery-ui/unique-id', 'jquery-ui/version', 'jquery-ui/widget',
+            'jquery-ui/widgets/mouse', 'jquery-ui/widgets/draggable', 'jquery-ui/widgets/droppable',
+            'jquery-ui/widgets/resizable'], factory);
     } else if (typeof exports !== 'undefined') {
         try { jQuery = require('jquery'); } catch (e) {}
         try { _ = require('lodash'); } catch (e) {}
@@ -118,41 +123,6 @@
 
     Utils.insert_css_rule = obsolete(Utils.insertCSSRule, 'insert_css_rule', 'insertCSSRule');
     // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
-
-    /**
-    * @class GridStackDragDropPlugin
-    * Base class for drag'n'drop plugin.
-    */
-    function GridStackDragDropPlugin(grid) {
-        this.grid = grid;
-    }
-
-    GridStackDragDropPlugin.registeredPlugins = [];
-
-    GridStackDragDropPlugin.registerPlugin = function(pluginClass) {
-        GridStackDragDropPlugin.registeredPlugins.push(pluginClass);
-    };
-
-    GridStackDragDropPlugin.prototype.resizable = function(el, opts) {
-        return this;
-    };
-
-    GridStackDragDropPlugin.prototype.draggable = function(el, opts) {
-        return this;
-    };
-
-    GridStackDragDropPlugin.prototype.droppable = function(el, opts) {
-        return this;
-    };
-
-    GridStackDragDropPlugin.prototype.isDroppable = function(el) {
-        return false;
-    };
-
-    GridStackDragDropPlugin.prototype.on = function(el, eventName, callback) {
-        return this;
-    };
-
 
     var idSeq = 0;
 
@@ -381,9 +351,6 @@
     };
 
     GridStackEngine.prototype.canMoveNode = function(node, x, y, width, height) {
-        if (!this.isNodeChangedPosition(node, x, y, width, height)) {
-            return false;
-        }
         var hasLocked = Boolean(_.find(this.nodes, function(n) { return n.locked; }));
 
         if (!this.height && !hasLocked) {
@@ -439,27 +406,7 @@
         return clone.getGridHeight() <= this.height;
     };
 
-    GridStackEngine.prototype.isNodeChangedPosition = function(node, x, y, width, height) {
-        if (typeof x != 'number') { x = node.x; }
-        if (typeof y != 'number') { y = node.y; }
-        if (typeof width != 'number') { width = node.width; }
-        if (typeof height != 'number') { height = node.height; }
-
-        if (typeof node.maxWidth != 'undefined') { width = Math.min(width, node.maxWidth); }
-        if (typeof node.maxHeight != 'undefined') { height = Math.min(height, node.maxHeight); }
-        if (typeof node.minWidth != 'undefined') { width = Math.max(width, node.minWidth); }
-        if (typeof node.minHeight != 'undefined') { height = Math.max(height, node.minHeight); }
-
-        if (node.x == x && node.y == y && node.width == width && node.height == height) {
-            return false;
-        }
-        return true;
-    };
-
     GridStackEngine.prototype.moveNode = function(node, x, y, width, height, noPack) {
-        if (!this.isNodeChangedPosition(node, x, y, width, height)) {
-            return node;
-        }
         if (typeof x != 'number') { x = node.x; }
         if (typeof y != 'number') { y = node.y; }
         if (typeof width != 'number') { width = node.width; }
@@ -481,11 +428,6 @@
         node.y = y;
         node.width = width;
         node.height = height;
-
-        node.lastTriedX = x;
-        node.lastTriedY = y;
-        node.lastTriedWidth = width;
-        node.lastTriedHeight = height;
 
         node = this._prepareNode(node, resizing);
 
@@ -605,18 +547,8 @@
             removable: false,
             removeTimeout: 2000,
             verticalMarginUnit: 'px',
-            cellHeightUnit: 'px',
-            oneColumnModeClass: opts.oneColumnModeClass || 'grid-stack-one-column-mode',
-            ddPlugin: null
+            cellHeightUnit: 'px'
         });
-
-        if (this.opts.ddPlugin === false) {
-            this.opts.ddPlugin = GridStackDragDropPlugin;
-        } else if (this.opts.ddPlugin === null) {
-            this.opts.ddPlugin = _.first(GridStackDragDropPlugin.registeredPlugins) || GridStackDragDropPlugin;
-        }
-
-        this.dd = new this.opts.ddPlugin(this);
 
         if (this.opts.rtl === 'auto') {
             this.opts.rtl = this.container.css('direction') === 'rtl';
@@ -703,7 +635,7 @@
                 if (oneColumnMode) {
                     return;
                 }
-                self.container.addClass(self.opts.oneColumnModeClass);
+
                 oneColumnMode = true;
 
                 self.grid._sortNodes();
@@ -714,10 +646,10 @@
                         return;
                     }
                     if (node.noMove || self.opts.disableDrag) {
-                        self.dd.draggable(node.el, 'disable');
+                        node.el.draggable('disable');
                     }
                     if (node.noResize || self.opts.disableResize) {
-                        self.dd.resizable(node.el, 'disable');
+                        node.el.resizable('disable');
                     }
 
                     node.el.trigger('resize');
@@ -727,7 +659,6 @@
                     return;
                 }
 
-                self.container.removeClass(self.opts.oneColumnModeClass);
                 oneColumnMode = false;
 
                 if (self.opts.staticGrid) {
@@ -736,10 +667,10 @@
 
                 _.each(self.grid.nodes, function(node) {
                     if (!node.noMove && !self.opts.disableDrag) {
-                        self.dd.draggable(node.el, 'enable');
+                        node.el.draggable('enable');
                     }
                     if (!node.noResize && !self.opts.disableResize) {
-                        self.dd.resizable(node.el, 'enable');
+                        node.el.resizable('enable');
                     }
 
                     node.el.trigger('resize');
@@ -752,13 +683,13 @@
 
         if (!self.opts.staticGrid && typeof self.opts.removable === 'string') {
             var trashZone = $(self.opts.removable);
-            if (!this.dd.isDroppable(trashZone)) {
-                this.dd.droppable(trashZone, {
+            if (!trashZone.data('droppable')) {
+                trashZone.droppable({
                     accept: '.' + self.opts.itemClass
                 });
             }
-            this.dd
-                .on(trashZone, 'dropover', function(event, ui) {
+            trashZone
+                .on('dropover', function(event, ui) {
                     var el = $(ui.draggable);
                     var node = el.data('_gridstack_node');
                     if (node._grid !== self) {
@@ -766,7 +697,7 @@
                     }
                     self._setupRemovingTimeout(el);
                 })
-                .on(trashZone, 'dropout', function(event, ui) {
+                .on('dropout', function(event, ui) {
                     var el = $(ui.draggable);
                     var node = el.data('_gridstack_node');
                     if (node._grid !== self) {
@@ -816,18 +747,16 @@
                 }
             };
 
-            this.dd
-                .droppable(self.container, {
-                    accept: function(el) {
-                        el = $(el);
-                        var node = el.data('_gridstack_node');
-                        if (node && node._grid === self) {
-                            return false;
-                        }
-                        return el.is(self.opts.acceptWidgets === true ? '.grid-stack-item' : self.opts.acceptWidgets);
+            $(self.container).droppable({
+                accept: function(el) {
+                    el = $(el);
+                    var node = el.data('_gridstack_node');
+                    if (node && node._grid === self) {
+                        return false;
                     }
-                })
-                .on(self.container, 'dropover', function(event, ui) {
+                    return el.is(self.opts.acceptWidgets === true ? '.grid-stack-item' : self.opts.acceptWidgets);
+                },
+                over: function(event, ui) {
                     var offset = self.container.offset();
                     var el = $(ui.draggable);
                     var cellWidth = self.cellWidth();
@@ -844,8 +773,8 @@
                     el.data('_gridstack_node_orig', origNode);
 
                     el.on('drag', onDrag);
-                })
-                .on(self.container, 'dropout', function(event, ui) {
+                },
+                out: function(event, ui) {
                     var el = $(ui.draggable);
                     el.unbind('drag', onDrag);
                     var node = el.data('_gridstack_node');
@@ -854,8 +783,8 @@
                     self.placeholder.detach();
                     self._updateContainerHeight();
                     el.data('_gridstack_node', el.data('_gridstack_node_orig'));
-                })
-                .on(self.container, 'drop', function(event, ui) {
+                },
+                drop: function(event, ui) {
                     self.placeholder.detach();
 
                     var node = $(ui.draggable).data('_gridstack_node');
@@ -882,7 +811,8 @@
                     self._triggerChangeEvent();
 
                     self.grid.endUpdate();
-                });
+                }
+            });
         }
     };
 
@@ -1054,6 +984,7 @@
         var cellHeight;
 
         var dragOrResize = function(event, ui) {
+            // jhallam: Changed Math.round to Math.ceil on the following line to fix rounding errors.
             var x = Math.round(ui.position.left / cellWidth);
             var y = Math.floor((ui.position.top + cellHeight / 2) / cellHeight);
             var width;
@@ -1100,18 +1031,10 @@
                     return;
                 }
             }
-            // width and height are undefined if not resizing
-            var lastTriedWidth = typeof width !== 'undefined' ? width : node.lastTriedWidth;
-            var lastTriedHeight = typeof height !== 'undefined' ? height : node.lastTriedHeight;
-            if (!self.grid.canMoveNode(node, x, y, width, height) ||
-                (node.lastTriedX === x && node.lastTriedY === y &&
-                node.lastTriedWidth === lastTriedWidth && node.lastTriedHeight === lastTriedHeight)) {
+
+            if (!self.grid.canMoveNode(node, x, y, width, height)) {
                 return;
             }
-            node.lastTriedX = x;
-            node.lastTriedY = y;
-            node.lastTriedWidth = width;
-            node.lastTriedHeight = height;
             self.grid.moveNode(node, x, y, width, height);
             self._updateContainerHeight();
         };
@@ -1134,8 +1057,8 @@
             node._beforeDragX = node.x;
             node._beforeDragY = node.y;
 
-            self.dd.resizable(el, 'option', 'minWidth', cellWidth * (node.minWidth || 1));
-            self.dd.resizable(el, 'option', 'minHeight', strictCellHeight * (node.minHeight || 1));
+            el.resizable('option', 'minWidth', cellWidth * (node.minWidth || 1));
+            el.resizable('option', 'minHeight', strictCellHeight * (node.minHeight || 1));
 
             if (event.type == 'resizestart') {
                 o.find('.grid-stack-item').trigger('resizestart');
@@ -1192,24 +1115,25 @@
             }
         };
 
-        this.dd
-            .draggable(el, {
+        el
+            .draggable(_.extend({}, this.opts.draggable, {
+                containment: this.opts.isNested ? this.container.parent() : null,
                 start: onStartMoving,
                 stop: onEndMoving,
                 drag: dragOrResize
-            })
-            .resizable(el, {
+            }))
+            .resizable(_.extend({}, this.opts.resizable, {
                 start: onStartMoving,
                 stop: onEndMoving,
                 resize: dragOrResize
-            });
+            }));
 
         if (node.noMove || this._isOneColumnMode() || this.opts.disableDrag) {
-            this.dd.draggable(el, 'disable');
+            el.draggable('disable');
         }
 
         if (node.noResize || this._isOneColumnMode() || this.opts.disableResize) {
-            this.dd.resizable(el, 'disable');
+            el.resizable('disable');
         }
 
         el.attr('data-gs-locked', node.locked ? 'yes' : null);
@@ -1343,9 +1267,9 @@
 
             node.noResize = !(val || false);
             if (node.noResize || self._isOneColumnMode()) {
-                self.dd.resizable(el, 'disable');
+                el.resizable('disable');
             } else {
-                self.dd.resizable(el, 'enable');
+                el.resizable('enable');
             }
         });
         return this;
@@ -1363,10 +1287,10 @@
 
             node.noMove = !(val || false);
             if (node.noMove || self._isOneColumnMode()) {
-                self.dd.draggable(el, 'disable');
+                el.draggable('disable');
                 el.removeClass('ui-draggable-handle');
             } else {
-                self.dd.draggable(el, 'enable');
+                el.draggable('enable');
                 el.addClass('ui-draggable-handle');
             }
         });
@@ -1722,7 +1646,6 @@
 
     scope.GridStackUI.Utils = Utils;
     scope.GridStackUI.Engine = GridStackEngine;
-    scope.GridStackUI.GridStackDragDropPlugin = GridStackDragDropPlugin;
 
     $.fn.gridstack = function(opts) {
         return this.each(function() {

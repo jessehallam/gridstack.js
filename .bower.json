@@ -1,6 +1,6 @@
 {
-  "name": "gridstack-jhallam",
-  "version": "1.0.0",
+  "name": "gridstack",
+  "version": "0.2.6",
   "homepage": "https://github.com/troolee/gridstack.js",
   "authors": [
     "Pavel Reznikov <pashka.reznikov@gmail.com>"
@@ -32,5 +32,14 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "_release": "0.2.6",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.2.6",
+    "commit": "28ed6fa374592eb56590050cece409471fbfc41e"
+  },
+  "_source": "https://github.com/troolee/gridstack.js.git",
+  "_target": "*",
+  "_originalSource": "gridstack"
 }
